@@ -1978,6 +1978,8 @@ function tryDownload(blob, filename, fallbackTitle, fallbackContent){
 function switchToCSVMode(){
   if(mdEditMode){showToast('テーブル編集中は切り替えできません');return;}
   appMode='csv';localStorage.setItem(SK_MODE,'csv');
+  focusRefs=[];focusEdit=null;pinnedIds=new Set();
+  loadFocusState();
   currentView='card';setViewDirect('card');
 }
 function switchToMDMode(){
