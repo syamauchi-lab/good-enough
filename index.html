@@ -401,7 +401,9 @@ table.dt td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--t
     <button class="md-tab-btn"        id="mdTabPreview" onclick="setMdTab('preview')">プレビュー</button>
     <div style="flex:1"></div>
     <button class="md-sort-btn" id="mdSortBtn" onclick="toggleDragMode()" title="ブロック並べ替え">⠿ 並べ替え</button>
-    <button id="mdUndoBtn" onclick="undoMd()" title="元に戻す" style="flex-shrink:0;width:32px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:14px;cursor:pointer;opacity:0.3;display:flex;align-items:center;justify-content:center;">↩️</button>
+    <button id="mdSelectAllBtn" onclick="mdSelectAll()" title="すべてを選択" style="flex-shrink:0;width:32px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">⬜</button>
+    <button id="mdCopyBtn" onclick="mdCopyAll()" title="コピー" style="flex-shrink:0;width:32px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">📋</button>
+    <button id="mdUndoBtn" onclick="undoMd()" title="元に戻す" style="flex-shrink:0;width:32px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:16px;cursor:pointer;opacity:0.3;display:flex;align-items:center;justify-content:center;">↩️</button>
     <button onclick="openRename()" title="ファイル名を変更" style="flex-shrink:0;width:32px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✏️</button>
   </div>
   <div class="md-editor-pane" id="mdEditorPane">
@@ -539,6 +541,17 @@ table.dt td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--t
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div class="confirm-overlay" id="mdCloseOverlay" onclick="mdCloseCancelOutside(event)">
+  <div class="confirm-box">
+    <div class="confirm-title">変更されています。</div>
+    <div class="confirm-sub">閉じる前にエクスポートしますか？</div>
+    <div class="confirm-actions">
+      <button class="confirm-cancel" onclick="mdCloseNo()">いいえ</button>
+      <button class="confirm-delete" style="background:var(--accent);border-color:var(--accent);" onclick="mdCloseYes()">はい</button>
+    </div>
+  </div>
+</div>
 
 <div class="confirm-overlay" id="confirmOverlay" onclick="cancelDelete(event)">
   <div class="confirm-box">
@@ -705,7 +718,7 @@ function deleteCsvFile(id){
     loadFocusState(); // 切替先のfocusStateを復元
   }
   filtered=applyFilter();undoStack=[];updateUndoBtn();
-  render();renderCsvFileTabs();saveCSV();showToast('ファイルを削除しました');
+  render();renderCsvFileTabs();saveCSV();showToast('ファイルを閉じました');
 }
 function renameCsvFile(id){
   const f=csvFiles.find(x=>x.id===id);if(!f)return;
@@ -871,16 +884,41 @@ renderMdFileTabs();renderMdEditor();saveMD();
 setTimeout(()=>{const ta=document.getElementById('mdEditor');if(ta)ta.focus();},80);
 showToast('新規ファイルを作成しました');
 }
+let mdCloseTargetId=null;
 function deleteMdFile(id){
-if(mdFiles.length<=1){showToast('最後のファイルは削除できません');return;}
-const f=mdFiles.find(x=>x.id===id);
-if(f&&f.content.trim()){
-if(!confirm(`「${f.name}」を削除しますか？\n\n内容は復元できません。`))return;
+  if(mdFiles.length<=1){showToast('最後のファイルは削除できません');return;}
+  const f=mdFiles.find(x=>x.id===id);
+  if(f&&f.content.trim()){
+    mdCloseTargetId=id;
+    document.getElementById('mdCloseOverlay').classList.add('open');
+    return;
+  }
+  _doDeleteMdFile(id);
 }
-mdFiles=mdFiles.filter(f=>f.id!==id);
-mdUndoStack=mdUndoStack.filter(s=>s.id!==id); // 削除ファイルの履歴を解放
-if(mdCurrentId===id){mdCurrentId=mdFiles[0].id;clearTimeout(window._mdUndoTimer);window._mdUndoTimer=null;}
-renderMdFileTabs();renderMdEditor();updateMdUndoBtn();saveMD();showToast('ファイルを削除しました');
+function mdCloseYes(){
+  document.getElementById('mdCloseOverlay').classList.remove('open');
+  if(mdCloseTargetId!==null){
+    const f=mdFiles.find(x=>x.id===mdCloseTargetId);
+    if(f){
+      const blob=new Blob([f.content],{type:'text/markdown'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+      a.download=f.name.endsWith('.md')?f.name:f.name+'.md';
+      a.click();URL.revokeObjectURL(a.href);
+    }
+    _doDeleteMdFile(mdCloseTargetId);
+    mdCloseTargetId=null;
+  }
+}
+function mdCloseNo(){
+  document.getElementById('mdCloseOverlay').classList.remove('open');
+  if(mdCloseTargetId!==null){_doDeleteMdFile(mdCloseTargetId);mdCloseTargetId=null;}
+}
+function mdCloseCancelOutside(e){if(e.target===document.getElementById('mdCloseOverlay'))document.getElementById('mdCloseOverlay').classList.remove('open');}
+function _doDeleteMdFile(id){
+  mdFiles=mdFiles.filter(f=>f.id!==id);
+  mdUndoStack=mdUndoStack.filter(s=>s.id!==id);
+  if(mdCurrentId===id){mdCurrentId=mdFiles[0].id;clearTimeout(window._mdUndoTimer);window._mdUndoTimer=null;}
+  renderMdFileTabs();renderMdEditor();updateMdUndoBtn();saveMD();showToast('ファイルを削除しました');
 }
 function openRename(){
 const cur=mdCur();if(!cur)return;
@@ -911,7 +949,19 @@ document.getElementById('mdTabPreview').classList.toggle('active',tab==='preview
 document.getElementById('mdEditorPane').classList.toggle('hidden',tab!=='edit');
 document.getElementById('mdPreviewPane').classList.toggle('hidden',tab!=='preview');
 document.getElementById('mdSortBtn').classList.toggle('visible',tab==='preview');
+const editOnly=['mdSelectAllBtn','mdCopyBtn','mdUndoBtn'];
+editOnly.forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=tab==='edit'?'flex':'none';});
 if(tab==='preview'){dragMode?renderBlockDragView():updateMdPreview();}
+}
+function mdSelectAll(){
+  const ta=document.getElementById('mdEditor');
+  ta.focus();ta.select();
+}
+function mdCopyAll(){
+  const cur=mdCur();if(!cur)return;
+  navigator.clipboard.writeText(cur.content).then(()=>showToast('コピーしました')).catch(()=>{
+    const ta=document.getElementById('mdEditor');ta.select();document.execCommand('copy');showToast('コピーしました');
+  });
 }
 function onMdInput(){
 const cur=mdCur();if(!cur)return;
