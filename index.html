@@ -279,7 +279,7 @@ table.dt td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--t
 .csv-file-tab-size{font-size:9px;opacity:0.5;flex-shrink:0;font-family:'DM Mono',monospace;}
 
 /* ===== Block Drag ===== */
-.md-sort-btn{margin-left:auto;padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;transition:all 0.15s;display:none;}
+.md-sort-btn{padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;transition:all 0.15s;display:none;}
 .md-sort-btn.visible{display:block;}
 .md-sort-btn.active{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
 .md-drag-block{display:flex;align-items:flex-start;gap:6px;padding:3px 4px 3px 0;border:1.5px solid transparent;border-radius:8px;transition:border-color 0.12s,background 0.12s;margin-bottom:2px;}
@@ -399,9 +399,10 @@ table.dt td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--t
   <div class="md-mode-bar">
     <button class="md-tab-btn active" id="mdTabEdit"    onclick="setMdTab('edit')">編集</button>
     <button class="md-tab-btn"        id="mdTabPreview" onclick="setMdTab('preview')">プレビュー</button>
+    <div style="flex:1"></div>
     <button class="md-sort-btn" id="mdSortBtn" onclick="toggleDragMode()" title="ブロック並べ替え">⠿ 並べ替え</button>
-    <button id="mdUndoBtn" onclick="undoMd()" title="元に戻す" style="margin-left:auto;flex-shrink:0;padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;opacity:0.3;">↩️ 元に戻す</button>
-    <button onclick="openRename()" title="ファイル名を変更" style="flex-shrink:0;padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;">✏️ 名称変更</button>
+    <button id="mdUndoBtn" onclick="undoMd()" title="元に戻す" style="flex-shrink:0;width:32px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:14px;cursor:pointer;opacity:0.3;display:flex;align-items:center;justify-content:center;">↩️</button>
+    <button onclick="openRename()" title="ファイル名を変更" style="flex-shrink:0;width:32px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✏️</button>
   </div>
   <div class="md-editor-pane" id="mdEditorPane">
     <div class="md-toolbar" id="mdToolbar">
