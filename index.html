@@ -686,6 +686,7 @@ function switchCsvFile(id){
   syncActiveToCsvFile();
   csvCurrentId=id;
   applyActiveCsvFile();
+  focusRefs=[];focusEdit=null;pinnedIds=new Set(); // 切替前にリセット
   loadFocusState(); // 新ファイルのfocusStateを復元
   filtered=applyFilter();
   undoStack=[];updateUndoBtn();
@@ -742,7 +743,7 @@ function loadFocusState(){
     const s=localStorage.getItem(SK_FOCUS);if(!s)return;
     const all=JSON.parse(s);
     // 旧形式（refs直接）と新形式（{fileId:{refs...}}）を両対応
-    const p=all.refs?all:(all[csvCurrentId||0]||{});
+    const p=all.refs?all:(csvCurrentId!=null?all[csvCurrentId]||{}:{});
     focusRefs=(p.refs||[]).filter(c=>COLUMNS.includes(c));
     focusEdit=COLUMNS.includes(p.edit)?p.edit:null;
     pinnedIds=new Set((p.pinned||[]).filter(id=>data.some(r=>r.id===id)));
@@ -751,7 +752,8 @@ function loadFocusState(){
 function saveFocusState(){
   try{
     const all=JSON.parse(localStorage.getItem(SK_FOCUS)||'{}');
-    all[csvCurrentId||0]={refs:focusRefs,edit:focusEdit,pinned:[...pinnedIds]};
+    if(csvCurrentId==null)return; // IDが未確定なら保存しない
+    all[csvCurrentId]={refs:focusRefs,edit:focusEdit,pinned:[...pinnedIds]};
     localStorage.setItem(SK_FOCUS,JSON.stringify(all));
   }catch(e){}
 }
